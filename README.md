@@ -1,4 +1,33 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# NOVO NeuroTech - Parkinson's Disease Risk Assessment App
+
+## Overview
+
+This React Native application provides a comprehensive tool for assessing Parkinson's disease risk using various clinical measurements and a machine learning model. The app allows healthcare professionals to input patient data, process it through a predictive model, and visualize the risk assessment results.
+
+## Features
+
+- **Parkinson's Test Data Entry**: Input DAT scan values, UPDRS scores, smell test results, and cognitive scores
+- **Risk Assessment Model**: Process test data through a machine learning model to predict Parkinson's disease risk
+- **Visual Risk Display**: View color-coded risk levels (Low, Moderate, High) with percentage scores
+- **Detailed Results**: Access comprehensive test summaries and recommendations based on risk level
+- **Patient Management**: Track patient history and manage multiple assessments
+
+## Model Integration
+
+The application integrates with a Parkinson's disease prediction model that analyzes various clinical markers to assess disease risk. The model takes into account:
+
+- DAT scan measurements (caudate and putamen ratios)
+- UPDRS (Unified Parkinson's Disease Rating Scale) scores
+- Smell test performance
+- Cognitive assessment scores
+
+## Project Structure
+
+- `src/api/parkinsonModelService.js`: Service for interacting with the Parkinson's prediction model
+- `src/screens/main/ParkinsonTestScreen.js`: Screen for inputting test data and viewing initial risk assessment
+- `src/screens/main/ParkinsonTestResultScreen.js`: Detailed results screen showing comprehensive risk analysis
+- `src/redux/slices/parkinsonTestSlice.js`: Redux state management for test data
+- `model/`: Directory containing the model files (PKL format)
 
 # Getting Started
 
