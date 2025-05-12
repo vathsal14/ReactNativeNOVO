@@ -7,7 +7,7 @@ import Constants from 'expo-constants';
 // In production, use the Render deployed backend URL
 const API_URL = __DEV__ 
   ? 'http://10.0.2.2:5000/api/alzheimer-prediction'
-  : 'https://alzheimers-prediction-api.onrender.com/api/alzheimer-prediction';
+  : 'https://alzheimers-prediction-apii.onrender.com/api/alzheimer-prediction';
 
 const AlzheimerModelService = {
 
