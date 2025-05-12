@@ -1,33 +1,55 @@
-# NOVO NeuroTech - Parkinson's Disease Risk Assessment App
+# NOVO NeuroTech - Neurological Disease Risk Assessment App
 
 ## Overview
 
-This React Native application provides a comprehensive tool for assessing Parkinson's disease risk using various clinical measurements and a machine learning model. The app allows healthcare professionals to input patient data, process it through a predictive model, and visualize the risk assessment results.
+This React Native application provides a comprehensive tool for assessing neurological disease risk, including both Parkinson's and Alzheimer's diseases, using various clinical measurements and machine learning models. The app allows healthcare professionals to input patient data, process it through predictive models, and visualize the risk assessment results.
 
 ## Features
 
 - **Parkinson's Test Data Entry**: Input DAT scan values, UPDRS scores, smell test results, and cognitive scores
-- **Risk Assessment Model**: Process test data through a machine learning model to predict Parkinson's disease risk
+- **Alzheimer's Test Data Entry**: Input MRI-derived measurements including hippocampus volume, cortical thickness, and more
+- **Risk Assessment Models**: Process test data through machine learning models to predict disease risk
 - **Visual Risk Display**: View color-coded risk levels (Low, Moderate, High) with percentage scores
 - **Detailed Results**: Access comprehensive test summaries and recommendations based on risk level
 - **Patient Management**: Track patient history and manage multiple assessments
 
 ## Model Integration
 
-The application integrates with a Parkinson's disease prediction model that analyzes various clinical markers to assess disease risk. The model takes into account:
+The application integrates with prediction models for both Parkinson's and Alzheimer's diseases that analyze various clinical markers to assess disease risk.
 
+### Parkinson's Disease Model
+The Parkinson's model takes into account:
 - DAT scan measurements (caudate and putamen ratios)
 - UPDRS (Unified Parkinson's Disease Rating Scale) scores
 - Smell test performance
 - Cognitive assessment scores
 
+### Alzheimer's Disease Model
+The Alzheimer's model analyzes MRI-derived measurements including:
+- Hippocampus volume (cm³)
+- Cortical thickness (mm)
+- Ventricle volume (cm³)
+- White matter hyperintensities
+- Brain glucose metabolism (SUV)
+- Amyloid deposition (SUVR)
+- Tau protein level (SUVR)
+
 ## Project Structure
 
+### Frontend (React Native)
 - `src/api/parkinsonModelService.js`: Service for interacting with the Parkinson's prediction model
-- `src/screens/main/ParkinsonTestScreen.js`: Screen for inputting test data and viewing initial risk assessment
-- `src/screens/main/ParkinsonTestResultScreen.js`: Detailed results screen showing comprehensive risk analysis
-- `src/redux/slices/parkinsonTestSlice.js`: Redux state management for test data
+- `src/api/alzheimerModelService.js`: Service for interacting with the Alzheimer's prediction model
+- `src/screens/main/ParkinsonTestScreen.js`: Screen for inputting Parkinson's test data and viewing risk assessment
+- `src/screens/main/AlzheimerTestScreen.js`: Screen for inputting Alzheimer's test data and viewing risk assessment
+- `src/redux/slices/`: Redux state management for test data
+
+### Backend (Python)
+- `backend/fixed_pure_parkinson_server.py`: Flask server for Parkinson's risk prediction using PKL model
+- `backend/enhanced_alzheimer_server.py`: Flask server for Alzheimer's risk prediction using PKL model
 - `model/`: Directory containing the model files (PKL format)
+  - `Parkinson_Model.pkl`: Trained model for Parkinson's disease risk prediction
+  - `alz_model.pkl`: Trained model for Alzheimer's disease risk prediction
+  - `scaler.pkl` & `scaler_y.pkl`: Feature scalers for the models
 
 # Getting Started
 

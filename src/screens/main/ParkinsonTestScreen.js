@@ -34,6 +34,11 @@ const ParkinsonTestScreen = () => {
   const [smellTestValue, setSmellTestValue] = useState(''); // Initialize as empty
   const [cognitiveValue, setCognitiveValue] = useState(''); // Initialize as empty
 
+  const [caudateRValue, setCaudateRValue] = useState('');
+  const [caudateLValue, setCaudateLValue] = useState('');
+  const [putamenRValue, setPutamenRValue] = useState('');
+  const [putamenLValue, setPutamenLValue] = useState('');
+
   // State to store calculated results
   const [calculatedResults, setCalculatedResults] = useState(null);
   // State to track loading state during model prediction
@@ -44,14 +49,8 @@ const ParkinsonTestScreen = () => {
   // Handle file upload
   const handleUploadReports = async () => {
     try {
-
-
       // Process the selected files
-
-
-    } catch (err) {
-
-    }
+    } catch (err) {}
   };
 
   // Process uploaded files
@@ -59,14 +58,11 @@ const ParkinsonTestScreen = () => {
     try {
       // Simulate file upload to server
       Alert.alert('Uploading', 'Uploading files...');
-      
       // In a real app, you would upload these files to your server
       // For demonstration, we'll just read the first file if it's a JSON
       if (files.length > 0 && files[0].name.endsWith('.json')) {
-
         try {
-            const jsonData = JSON.parse(files[0].content);
-          
+          const jsonData = JSON.parse(files[0].content);
           // Update local state with parsed data if it matches our format
           if (jsonData.datScan) {
             setDatScanValues(jsonData.datScan);
@@ -80,7 +76,6 @@ const ParkinsonTestScreen = () => {
           if (jsonData.cognitive) {
             setCognitiveValue(jsonData.cognitive.cogchq);
           }
-          
           Alert.alert('Success', 'Test results updated from uploaded file');
         } catch (e) {
           Alert.alert('Error', 'Invalid JSON format in the uploaded file');
@@ -96,16 +91,27 @@ const ParkinsonTestScreen = () => {
 
   // Save test results to Redux store and get prediction from model
   const saveTestResults = async () => {
+    // Check if user has entered values for caudate and putamen
+    if ((!caudateRValue || !caudateLValue || !putamenRValue || !putamenLValue) && 
+        (!updrsValue || !smellTestValue || !cognitiveValue)) {
+      Alert.alert('Missing Data', 'Please enter all DAT scan values along with other test data');
+      return;
+    }
+    
     const results = {
-      datScan: datScanValues,
+      datScan: {
+        // Use user-entered values if available, otherwise use defaults
+        caudateR: caudateRValue ? parseFloat(caudateRValue) : datScanValues.caudateR,
+        caudateL: caudateLValue ? parseFloat(caudateLValue) : datScanValues.caudateL,
+        putamenR: putamenRValue ? parseFloat(putamenRValue) : datScanValues.putamenR,
+        putamenL: putamenLValue ? parseFloat(putamenLValue) : datScanValues.putamenL,
+      },
       updrs: { npdtot: updrsValue || '0' },
       smellTest: { upsitPercentage: smellTestValue || '0' },
       cognitive: { cogchq: cognitiveValue || '0' },
     };
-    
     // Save to Redux store
     dispatch(updateTestResults(results));
-    
     // Get prediction from model
     try {
       setIsLoading(true);
@@ -142,8 +148,9 @@ const ParkinsonTestScreen = () => {
       average,
     });
 
-    // Navigate to results screen
-    navigation.navigate('ParkinsonTestResult');
+    // Show results in the current screen instead of navigating
+    // This avoids navigation errors if the ParkinsonTestResult screen doesn't exist
+    // The results will be displayed in the current screen's result card
   };
 
   return (
@@ -175,22 +182,46 @@ const ParkinsonTestScreen = () => {
       <View style={styles.formContainer}>
         {/* DAT Scan Test */}
         <View style={styles.testSection}>
-          <Text style={styles.sectionTitle}>DAT Scan Test :</Text>
+          <Text style={styles.sectionTitle}>DAT Scan Values :</Text>
           <View style={styles.resultRow}>
             <Text style={styles.resultLabel}>Caudate-R</Text>
-            <Text style={styles.resultValue}>{datScanValues.caudateR}</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={caudateRValue}
+              onChangeText={setCaudateRValue}
+              placeholder={datScanValues.caudateR.toString()}
+            />
           </View>
           <View style={styles.resultRow}>
             <Text style={styles.resultLabel}>Caudate-L</Text>
-            <Text style={styles.resultValue}>{datScanValues.caudateL}</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={caudateLValue}
+              onChangeText={setCaudateLValue}
+              placeholder={datScanValues.caudateL.toString()}
+            />
           </View>
           <View style={styles.resultRow}>
             <Text style={styles.resultLabel}>Putamen-R</Text>
-            <Text style={styles.resultValue}>{datScanValues.putamenR}</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={putamenRValue}
+              onChangeText={setPutamenRValue}
+              placeholder={datScanValues.putamenR.toString()}
+            />
           </View>
           <View style={styles.resultRow}>
             <Text style={styles.resultLabel}>Putamen-L</Text>
-            <Text style={styles.resultValue}>{datScanValues.putamenL}</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={putamenLValue}
+              onChangeText={setPutamenLValue}
+              placeholder={datScanValues.putamenL.toString()}
+            />
           </View>
         </View>
 
@@ -253,7 +284,7 @@ const ParkinsonTestScreen = () => {
               {predictionResult.riskLevel}
             </Text>
           </View>
-          <Text style={styles.resultNote}>This assessment is based on the model prediction using your test data.</Text>
+
         </View>
       )}
 
@@ -271,67 +302,7 @@ const ParkinsonTestScreen = () => {
         </Text>
       </TouchableOpacity>
 
-      {/* Calculated Results */}
-      {calculatedResults && (
-        <View
-          style={[
-            styles.resultCard,
-            {
-              borderColor: calculatedResults.percentage >= 20 ? 'red' : 'green',
-              borderWidth: 2,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.resultCardTitle,
-              { color: calculatedResults.percentage >= 20 ? 'red' : 'green' },
-            ]}
-          >
-            {calculatedResults.percentage >= 20
-              ? 'Positive: Danger Result'
-              : 'Negative: Safe Result'}
-          </Text>
-
-          {/* <Text style={styles.resultCardText}>
-            DAT Scan Sum: {calculatedResults.datScanSum}
-          </Text>
-          <Text style={styles.resultCardText}>
-            Total Sum: {calculatedResults.totalSum}
-          </Text>
-          <Text style={styles.resultCardText}>
-            Average: {calculatedResults.average}
-          </Text> */}
-          <Text style={styles.resultCardText}>
-            Percentage: {calculatedResults.percentage}%
-          </Text>
-
-          {/* Show Precautions */}
-          {calculatedResults.percentage >= 20 ? (
-            <View>
-              {/* Precautions */}
-              <View style={styles.precautionsContainer}>
-                <Text style={styles.precautionsTitle}>Precautions:</Text>
-                <Text style={styles.precautionsText}>
-                  - Consult a neurologist immediately.
-                </Text>
-                <Text style={styles.precautionsText}>
-                  - Follow a healthy diet and exercise regularly.
-                </Text>
-                <Text style={styles.precautionsText}>
-                  - Avoid stress and maintain a positive mindset.
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.safeContainer}>
-              <Text style={styles.safeText}>
-                The patient is safe. No immediate action is required.
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
+      {/* Precautions section moved to results screen */}
 
       {/* Medications Section */}
       {/* <View style={styles.medicationsContainer}>
@@ -490,9 +461,14 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   resultCardTitle: {
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    fontFamily: 'Poppins_600SemiBold',  
+
+    //marginBottom: ,
   },
   resultCardText: {
     fontSize: 14,

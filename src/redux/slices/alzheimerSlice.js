@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  mriScan: null,
   riskPercentage: 0,
   isLoading: false,
   error: null,
@@ -12,9 +11,6 @@ export const alzheimerSlice = createSlice({
   name: 'alzheimer',
   initialState,
   reducers: {
-    setMriScan: (state, action) => {
-      state.mriScan = action.payload;
-    },
     setRiskPercentage: (state, action) => {
       state.riskPercentage = action.payload;
     },
@@ -32,7 +28,6 @@ export const alzheimerSlice = createSlice({
 });
 
 export const {
-  setMriScan,
   setRiskPercentage,
   setLoading,
   setError,

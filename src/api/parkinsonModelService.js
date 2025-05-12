@@ -1,4 +1,7 @@
-import { NativeModules } from 'react-native';
+import axios from 'axios';
+
+// API endpoint for the Parkinson's model
+const API_URL = 'http://10.0.2.2:5001/api/parkinson-prediction';
 
 // This service handles interactions with the Parkinson's model
 const ParkinsonModelService = {
@@ -9,56 +12,43 @@ const ParkinsonModelService = {
    */
   async predictRisk(testData) {
     try {
-      // In a production app, we would use a backend API to interact with the model
-      // For this implementation, we'll simulate the model prediction based on the test data
+      console.log('Sending Parkinson\'s test data to backend:', JSON.stringify(testData));
       
-      // Extract values from test data
-      const { datScan, updrs, smellTest, cognitive } = testData;
+      // Send the test data to the backend API
+      const response = await axios.post(API_URL, testData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000, // 10 seconds timeout
+      });
       
-      // Calculate a weighted score based on the test values
-      // These weights would be determined by the actual model in a real implementation
-      const caudateRatio = (parseFloat(datScan.caudateR) + parseFloat(datScan.caudateL)) / 2;
-      const putamenRatio = (parseFloat(datScan.putamenR) + parseFloat(datScan.putamenL)) / 2;
-      const updrsScore = parseFloat(updrs.npdtot);
-      const smellScore = parseFloat(smellTest.upsitPercentage);
-      const cognitiveScore = parseFloat(cognitive.cogchq);
+      console.log('Received Parkinson\'s prediction response:', JSON.stringify(response.data));
       
-      // Calculate risk score (this is a simplified example)
-      // In a real implementation, this would be the output from the ML model
-      const riskScore = (
-        (3 - caudateRatio) * 15 + 
-        (3 - putamenRatio) * 20 + 
-        updrsScore * 8 + 
-        (30 - smellScore) * 0.7 + 
-        cognitiveScore * 12
-      ) / 10;
-      
-      // Normalize score to a percentage (0-100)
-      const riskPercentage = Math.min(Math.max(riskScore, 0), 100).toFixed(1);
-      
-      // Determine risk level
-      let riskLevel = 'Low';
-      let riskColor = '#4CAF50';
-      
-      if (riskPercentage > 60) {
-        riskLevel = 'High';
-        riskColor = '#F44336';
-      } else if (riskPercentage > 30) {
-        riskLevel = 'Moderate';
-        riskColor = '#FF9800';
-      }
+      // Extract the prediction result from the response
+      const { riskPercentage, riskLevel, riskColor, confidence, model_used } = response.data;
       
       // Return prediction result
       return {
         riskPercentage,
         riskLevel,
         riskColor,
-        confidence: 0.85, // In a real model, this would be the model's confidence score
+        confidence: confidence || 0.85,
+        modelUsed: model_used,
         timestamp: new Date().toISOString()
       };
     } catch (error) {
       console.error('Error predicting Parkinson\'s risk:', error);
-      throw new Error('Failed to predict Parkinson\'s risk');
+      console.error('Error details:', error.response ? error.response.data : 'No response data');
+      console.error('Error status:', error.response ? error.response.status : 'No status');
+      
+      // For network errors, provide a more specific message
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Connection timeout. Please try again.');
+      } else if (error.code === 'ERR_NETWORK') {
+        throw new Error('Network error. Please check your connection.');
+      } else {
+        throw new Error('Failed to predict Parkinson\'s risk: ' + (error.message || 'Unknown error'));
+      }
     }
   }
 };
