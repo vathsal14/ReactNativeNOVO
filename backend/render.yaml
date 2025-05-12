@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: parkinsons-prediction-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python fixed_pure_parkinson_server.py
+    envVars:
+      - key: PORT
+        value: 10000
+    autoDeploy: true
+
+  - type: web
+    name: alzheimers-prediction-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python enhanced_alzheimer_server.py
+    envVars:
+      - key: PORT
+        value: 10001
+    autoDeploy: true

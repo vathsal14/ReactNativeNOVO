@@ -1,7 +1,14 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 
 // API endpoint for the Parkinson's model
-const API_URL = 'http://10.0.2.2:5001/api/parkinson-prediction';
+// In development, use 10.0.2.2 (Android emulator's localhost)
+// In production, use the Render deployed backend URL
+const API_URL = __DEV__ 
+  ? 'http://10.0.2.2:5001/api/parkinson-prediction'
+  : 'https://parkinsons-prediction-api.onrender.com/api/parkinson-prediction';
+
+// You can also set this in app.json under expo.extra and access via Constants.expoConfig.extra
 
 // This service handles interactions with the Parkinson's model
 const ParkinsonModelService = {

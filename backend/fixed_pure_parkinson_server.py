@@ -214,11 +214,24 @@ class ParkinsonHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'Not Found')
 
-def run_server(port=5001):  # Use a different port from the Alzheimer's server
-    handler = ParkinsonHandler
-    with socketserver.TCPServer(("", port), handler) as httpd:
-        print(f"Serving Fixed Pure PKL Parkinson's model at port {port}")
-        httpd.serve_forever()
+def run_server(port=None):
+    # Use environment variable for port if available, otherwise use default
+    if port is None:
+        port = int(os.environ.get('PORT', 5001))
+    
+    print(f"Starting server on port {port}...")
+    
+    # For deployment, bind to all interfaces (0.0.0.0) instead of just localhost
+    host = '0.0.0.0'
+    
+    try:
+        handler = ParkinsonHandler
+        with socketserver.TCPServer((host, port), handler) as httpd:
+            print(f"Serving Fixed Pure PKL Parkinson's model at http://{host}:{port}/")
+            httpd.serve_forever()
+    except Exception as e:
+        print(f"Error starting server: {str(e)}")
+        traceback.print_exc()
 
 if __name__ == "__main__":
     run_server()

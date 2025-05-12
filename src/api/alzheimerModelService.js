@@ -1,8 +1,13 @@
 // This service handles interactions with the Alzheimer's model
 import axios from 'axios';
+import Constants from 'expo-constants';
 
 // API endpoint for the Alzheimer's model
-const API_URL = 'http://10.0.2.2:5000/api/alzheimer-prediction'; // Use 10.0.2.2 to access localhost from Android emulator
+// In development, use 10.0.2.2 (Android emulator's localhost)
+// In production, use the Render deployed backend URL
+const API_URL = __DEV__ 
+  ? 'http://10.0.2.2:5000/api/alzheimer-prediction'
+  : 'https://alzheimers-prediction-api.onrender.com/api/alzheimer-prediction';
 
 const AlzheimerModelService = {
 
