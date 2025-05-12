@@ -1,0 +1,14 @@
+flask==2.0.1
+flask-cors==3.0.10
+
+# Use compatible versions for Render
+numpy==1.24.3
+scikit-learn==1.2.2
+xgboost==1.7.3
+
+python-dotenv==1.0.0
+gunicorn==21.2.0
+
+# Prevent Cython compilation issues
+setuptools>=65.5.1
+Cython>=0.29.24,<3.0
