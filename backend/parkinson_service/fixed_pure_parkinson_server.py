@@ -9,16 +9,37 @@ from urllib.parse import parse_qs
 import traceback
 
 # Paths to the model and scalers
-# Check if we're running in Docker (where files would be in the app directory)
-if os.path.exists('/app/model/Parkinson_Model.pkl'):
-    MODEL_PATH = '/app/model/Parkinson_Model.pkl'
-    SCALER_PATH = '/app/model/scaler.pkl'
-    SCALER_Y_PATH = '/app/model/scaler_y.pkl'
+# First, try to find the model in the same directory as the script
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Check for models in various possible locations
+possible_model_paths = [
+    # Same directory as the script
+    os.path.join(CURRENT_DIR, 'model', 'Parkinson_Model.pkl'),
+    # Docker path
+    '/app/model/Parkinson_Model.pkl',
+    # Render path
+    os.path.join(CURRENT_DIR, 'model', 'Parkinson_Model.pkl'),
+    # Original path
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'Parkinson_Model.pkl')
+]
+
+# Find the first path that exists
+for path in possible_model_paths:
+    if os.path.exists(path):
+        MODEL_PATH = path
+        # Use the same directory for the scalers
+        model_dir = os.path.dirname(path)
+        SCALER_PATH = os.path.join(model_dir, 'scaler.pkl')
+        SCALER_Y_PATH = os.path.join(model_dir, 'scaler_y.pkl')
+        print(f"Found model at: {MODEL_PATH}")
+        break
 else:
-    # Local development paths
-    MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'Parkinson_Model.pkl')
-    SCALER_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'scaler.pkl')
-    SCALER_Y_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'scaler_y.pkl')
+    # If no path exists, use a default path
+    print("No model found in any of the expected locations")
+    MODEL_PATH = os.path.join(CURRENT_DIR, 'model', 'Parkinson_Model.pkl')
+    SCALER_PATH = os.path.join(CURRENT_DIR, 'model', 'scaler.pkl')
+    SCALER_Y_PATH = os.path.join(CURRENT_DIR, 'model', 'scaler_y.pkl')
 
 # Enable more verbose output
 print(f"Python version: {sys.version}")
@@ -27,9 +48,14 @@ print(f"Model path: {MODEL_PATH}")
 print(f"Scaler path: {SCALER_PATH}")
 print(f"Scaler Y path: {SCALER_Y_PATH}")
 
+# Define global variables for model and scalers
+model = None
+scaler = None
+scaler_y = None
+MODEL_LOADED = False
+
 # Load the model and scalers
 print(f"Loading model from {MODEL_PATH}...")
-USE_REAL_MODEL = False
 try:
     with open(MODEL_PATH, 'rb') as f:
         model = pickle.load(f)
@@ -45,11 +71,12 @@ try:
         scaler_y = pickle.load(f)
     print("Target scaler loaded successfully!")
     print(f"Scaler Y type: {type(scaler_y)}")
-    USE_REAL_MODEL = True
+    
+    MODEL_LOADED = True
 except Exception as e:
     print(f"Error loading model or scalers: {str(e)}")
     traceback.print_exc()
-    print("Will use fallback prediction instead")
+    print("Will continue without the model and use fallback prediction instead")
     # We'll continue without the model and use a fallback prediction method
 
 # Create a simple test to verify model works
@@ -57,24 +84,27 @@ test_features = np.array([[3.0, 3.0, 2.5, 2.5, 10, 20, 15]]) # Sample values
 print("\nTesting model with sample data...")
 print(f"Sample input: {test_features}")
 
-try:
-    # Scale the test features
-    scaled_test = scaler.transform(test_features)
-    print(f"Scaled test features: {scaled_test}")
-    
-    # Try prediction
+if MODEL_LOADED and scaler is not None and model is not None:
     try:
-        # First try predict_proba (for classifiers)
-        pred = model.predict_proba(scaled_test)[0][1]
-        print(f"Test prediction (predict_proba): {pred}")
-    except (AttributeError, IndexError) as e:
-        print(f"predict_proba failed: {str(e)}, using predict instead")
-        # Fall back to predict
-        pred = model.predict(scaled_test)[0]
-        print(f"Test prediction (predict): {pred}")
-except Exception as e:
-    print(f"Error during test prediction: {str(e)}")
-    traceback.print_exc()
+        # Scale the test features
+        scaled_test = scaler.transform(test_features)
+        print(f"Scaled test features: {scaled_test}")
+        
+        # Try prediction
+        try:
+            # First try predict_proba (for classifiers)
+            pred = model.predict_proba(scaled_test)[0][1]
+            print(f"Test prediction (predict_proba): {pred}")
+        except (AttributeError, IndexError) as e:
+            print(f"predict_proba failed: {str(e)}, using predict instead")
+            # Fall back to predict
+            pred = model.predict(scaled_test)[0]
+            print(f"Test prediction (predict): {pred}")
+    except Exception as e:
+        print(f"Error during test prediction: {str(e)}")
+        traceback.print_exc()
+else:
+    print("Skipping test prediction because model or scaler is not loaded")
 
 class ParkinsonHandler(http.server.BaseHTTPRequestHandler):
     def _set_headers(self, content_type="application/json"):
@@ -153,28 +183,39 @@ class ParkinsonHandler(http.server.BaseHTTPRequestHandler):
                 # Convert to numpy array for the model
                 features_array = np.array(features).reshape(1, -1)
                 
-                # Scale the features
-                scaled_features = scaler.transform(features_array)
-                print(f"Scaled features: {scaled_features.flatten().tolist()}")
-                
-                # Make prediction using the model
-                try:
-                    # First try predict_proba (for classifiers)
-                    raw_prediction = model.predict_proba(scaled_features)[0][1]
-                    method = "predict_proba"
-                except (AttributeError, IndexError) as e:
-                    print(f"predict_proba failed: {str(e)}, using predict instead")
-                    # Fall back to predict
-                    raw_prediction = model.predict(scaled_features)[0]
-                    
-                    # If needed, inverse transform
-                    if hasattr(scaler_y, 'inverse_transform') and hasattr(raw_prediction, 'ndim') and raw_prediction.ndim > 0:
+                # Check if model and scaler are available
+                if MODEL_LOADED and model is not None and scaler is not None:
+                    try:
+                        # Scale the features
+                        scaled_features = scaler.transform(features_array)
+                        print(f"Scaled features: {scaled_features.flatten().tolist()}")
+                        
+                        # Make prediction using the model
                         try:
-                            raw_prediction = scaler_y.inverse_transform(raw_prediction.reshape(-1, 1)).flatten()[0]
-                        except Exception as e:
-                            print(f"Error in inverse transform: {str(e)}")
-                    
-                    method = "predict"
+                            # First try predict_proba (for classifiers)
+                            raw_prediction = model.predict_proba(scaled_features)[0][1]
+                            method = "predict_proba"
+                        except (AttributeError, IndexError) as e:
+                            print(f"predict_proba failed: {str(e)}, using predict instead")
+                            # Fall back to predict
+                            raw_prediction = model.predict(scaled_features)[0]
+                            
+                            # If needed, inverse transform
+                            if hasattr(scaler_y, 'inverse_transform') and hasattr(raw_prediction, 'ndim') and raw_prediction.ndim > 0:
+                                try:
+                                    raw_prediction = scaler_y.inverse_transform(raw_prediction.reshape(-1, 1)).flatten()[0]
+                                except Exception as e:
+                                    print(f"Error in inverse transform: {str(e)}")
+                            
+                            method = "predict"
+                    except Exception as e:
+                        print(f"Error during prediction: {str(e)}")
+                        raw_prediction = None
+                        method = "failed"
+                else:
+                    print("Model or scaler not loaded, using fallback prediction")
+                    raw_prediction = None
+                    method = "fallback"
                 
                 print(f"Raw prediction ({method}): {raw_prediction}")
                 
