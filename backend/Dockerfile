@@ -6,9 +6,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy model files and server code
+# Copy server code and model files
 COPY . .
-COPY ../model /app/model
 
 # Make port 5001 available
 EXPOSE 5001
