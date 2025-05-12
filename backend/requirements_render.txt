@@ -1,0 +1,16 @@
+# Flask and dependencies
+flask
+flask-cors
+
+# Pre-compiled packages
+numpy
+scikit-learn --only-binary=scikit-learn
+xgboost --only-binary=xgboost
+
+# Deployment dependencies
+python-dotenv
+gunicorn
+
+# Prevent Cython compilation issues
+setuptools>=65.5.1
+Cython>=0.29.24,<3.0
