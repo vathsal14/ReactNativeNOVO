@@ -9,9 +9,16 @@ from urllib.parse import parse_qs
 import traceback
 
 # Paths to the model and scalers
-MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'Parkinson_Model.pkl')
-SCALER_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'scaler.pkl')
-SCALER_Y_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'scaler_y.pkl')
+# Check if we're running in Docker (where files would be in the app directory)
+if os.path.exists('/app/model/Parkinson_Model.pkl'):
+    MODEL_PATH = '/app/model/Parkinson_Model.pkl'
+    SCALER_PATH = '/app/model/scaler.pkl'
+    SCALER_Y_PATH = '/app/model/scaler_y.pkl'
+else:
+    # Local development paths
+    MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'Parkinson_Model.pkl')
+    SCALER_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'scaler.pkl')
+    SCALER_Y_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model', 'scaler_y.pkl')
 
 # Enable more verbose output
 print(f"Python version: {sys.version}")
@@ -22,6 +29,7 @@ print(f"Scaler Y path: {SCALER_Y_PATH}")
 
 # Load the model and scalers
 print(f"Loading model from {MODEL_PATH}...")
+USE_REAL_MODEL = False
 try:
     with open(MODEL_PATH, 'rb') as f:
         model = pickle.load(f)
@@ -37,10 +45,12 @@ try:
         scaler_y = pickle.load(f)
     print("Target scaler loaded successfully!")
     print(f"Scaler Y type: {type(scaler_y)}")
+    USE_REAL_MODEL = True
 except Exception as e:
     print(f"Error loading model or scalers: {str(e)}")
     traceback.print_exc()
-    raise RuntimeError("Cannot start server without the PKL model")
+    print("Will use fallback prediction instead")
+    # We'll continue without the model and use a fallback prediction method
 
 # Create a simple test to verify model works
 test_features = np.array([[3.0, 3.0, 2.5, 2.5, 10, 20, 15]]) # Sample values

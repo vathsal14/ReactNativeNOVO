@@ -7,7 +7,12 @@ import os
 from urllib.parse import parse_qs
 
 # Path to the actual PKL model
-MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'alz_model', 'model.pkl')
+# Check if we're running in Docker (where files would be in the app directory)
+if os.path.exists('/app/alz_model/model.pkl'):
+    MODEL_PATH = '/app/alz_model/model.pkl'
+else:
+    # Local development path
+    MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'alz_model', 'model.pkl')
 
 # Load the actual PKL model
 print(f"Loading model from {MODEL_PATH}...")
